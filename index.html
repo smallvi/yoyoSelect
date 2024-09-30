@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>yoyoSelect Plugin</title>
+</head>
+<body>
+
+<select name="cars" id="yoyoselect" multiple> 
+  <option value="volvo">Volvo</option>
+  <option value="saab">Saab</option>
+  <option value="mercedes">Mercedes</option>
+  <option value="audi">Audi</option>
+</select>
+
+<script>
+  function yoyoSelect(selectId, config) {
+    const bgColor = config.bgColor || '#007bff';
+    const color = config.color || 'white';
+
+    const style = document.createElement('style');
+    style.innerHTML = `
+      .yoyoselect-container {
+        width: 300px;
+        position: relative;
+      }
+      .yoyoselect-select {
+        display: flex;
+        flex-wrap: wrap;
+        padding: 5px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        cursor: pointer;
+        min-height: 40px;
+        align-items: center;
+      }
+      .yoyoselect-badge {
+        background-color: ${bgColor};
+        color: ${color};
+        padding: 3px 8px;
+        border-radius: 5px;
+        margin-right: 5px;
+        margin-bottom: 5px;
+        display: flex;
+        align-items: center;
+      }
+      .yoyoselect-badge span {
+        margin-right: 5px;
+      }
+      .yoyoselect-badge .remove {
+        background: #fff;
+        color: ${bgColor};
+        border: none;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        font-size: 12px;
+        cursor: pointer;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+      }
+      .yoyoselect-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 100;
+      }
+      .yoyoselect-dropdown-item {
+        padding: 10px;
+        cursor: pointer;
+      }
+      .yoyoselect-dropdown-item:hover {
+        background-color: #f1f1f1;
+      }
+      .yoyoselect-dropdown-item.selected {
+        background-color: ${bgColor};
+        color: white;
+      }
+    `;
+    document.head.appendChild(style);
+
+    const selectElement = document.querySelector(selectId);
+    const container = document.createElement('div');
+    container.className = 'yoyoselect-container';
+
+    const selectDisplay = document.createElement('div');
+    selectDisplay.className = 'yoyoselect-select';
+    const dropdown = document.createElement('div');
+    dropdown.className = 'yoyoselect-dropdown';
+    dropdown.style.display = 'none';
+
+    selectElement.style.display = 'none';
+
+    selectElement.parentNode.insertBefore(container, selectElement);
+    container.appendChild(selectDisplay);
+    container.appendChild(dropdown);
+    container.appendChild(selectElement);
+
+    const options = Array.from(selectElement.options);
+    const selectedValues = new Set();
+    const isMultiple = selectElement.hasAttribute('multiple');
+
+    function renderDropdown() {
+      dropdown.innerHTML = '';
+      options.forEach(option => {
+        const item = document.createElement('div');
+        item.className = 'yoyoselect-dropdown-item';
+        item.textContent = option.textContent;
+        item.dataset.value = option.value;
+        if (selectedValues.has(option.value)) {
+          item.classList.add('selected');
+        }
+        item.addEventListener('click', function () {
+          toggleSelection(option.value, option.textContent);
+          renderDropdown();
+        });
+        dropdown.appendChild(item);
+      });
+    }
+
+    function toggleSelection(value, text) {
+      if (isMultiple) {
+        if (selectedValues.has(value)) {
+          selectedValues.delete(value);
+          removeBadge(value);
+        } else {
+          selectedValues.add(value);
+          createBadge(value, text);
+        }
+      } else {
+        selectedValues.clear();
+        selectedValues.add(value);
+        selectDisplay.textContent = ''; 
+        selectDisplay.textContent = text;
+      }
+      updateSelect();
+    }
+
+    function updateSelect() {
+      options.forEach(option => {
+        option.selected = selectedValues.has(option.value);
+      });
+    }
+
+    function createBadge(value, text) {
+      const badge = document.createElement('div');
+      badge.className = 'yoyoselect-badge';
+      badge.dataset.value = value;
+
+      const badgeText = document.createElement('span');
+      badgeText.textContent = text;
+
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.addEventListener('click', function () {
+        selectedValues.delete(value);
+        removeBadge(value);
+        updateSelect();
+        renderDropdown();
+      });
+
+      badge.appendChild(badgeText);
+      badge.appendChild(removeBtn);
+      selectDisplay.appendChild(badge);
+    }
+
+    function removeBadge(value) {
+      const badge = selectDisplay.querySelector(`.yoyoselect-badge[data-value="${value}"]`);
+      if (badge) {
+        selectDisplay.removeChild(badge);
+      }
+    }
+
+    selectDisplay.addEventListener('click', function () {
+      dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    });
+
+    document.addEventListener('click', function (event) {
+      if (!container.contains(event.target)) {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    renderDropdown();
+  }
+
+
+  yoyoSelect('#yoyoselect', { bgColor: 'blue', color:'white' });
+</script>
+
+</body>
+</html>
